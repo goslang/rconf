@@ -9,9 +9,9 @@ type BindContext struct {
 	class *mruby.Class
 }
 
-// block binds a config block to a Go function. The function will be called and passed
-// a new BindContext which builds a new, anonymous class that will in turn be used as the
-// context for the Ruby config block.
+// block binds a config block to a Go function. The function will be called
+// and passed a new BindContext which builds a new, anonymous class that will
+// in turn be used as the context for the Ruby config block.
 func (bc BindContext) Block(attr string, f func(BindContext)) {
 	bc.BlockWith(attr, mruby.ArgsNone(), f)
 }
@@ -20,16 +20,28 @@ func (bc BindContext) BlockWithArg(attr string, f func(BindContext)) {
 	bc.BlockWith(attr, mruby.ArgsReq(1), f)
 }
 
-func (bc BindContext) BlockWith(attr string, args mruby.ArgSpec, f func(BindContext)) {
+func (
+	bc BindContext,
+) BlockWith(
+	attr string,
+	args mruby.ArgSpec,
+	f func(BindContext),
+) {
 	rbMethod := func(mrb *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+		// Create a new instance of the DSL class and attach any new DSL methods
+		// as Singletons.
 		dsl, _ := dslClass.New()
 		f(BindContext{class: dsl.SingletonClass()})
 
+		// Get the passed block, it will be the last argument in the list.
+		// NOTE: We should do some more sanity checking here to make sure that the
+		// block actually exists.
 		args := mrb.GetArgs()
 		block := args[len(args)-1]
 
-		// Run the block in the context of the anonymous class.
-		// TODO: Discarding err here
+		// Now that the DSL methods are defined, execute the block in the context
+		// of the DSL instance.
+		// TODO: Effectively discarding err here
 		_, err := dsl.CallBlock("instance_eval", block)
 		if err != nil {
 			println(err.Error())
@@ -51,6 +63,43 @@ func (bc BindContext) BindString(attr string, str *string) {
 	bc.class.DefineMethod(attr, rbMethod, mruby.ArgsReq(1))
 }
 
+// BindInt binds a Ruby method named `attr` to a target integer.
+func (bc BindContext) BindInt(attr string, target *int) {
+	rbMethod := func(mrb *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+		val := mrb.GetArgs()[0]
+		*target = val.Fixnum()
+		return nil, nil
+	}
+	bc.class.DefineMethod(attr, rbMethod, mruby.ArgsReq(1))
+}
+
+// BindFloat binds a Ruby method named `attr` to a target float64.
+func (bc BindContext) BindFloat(attr string, target *float64) {
+	rbMethod := func(mrb *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+		val := mrb.GetArgs()[0]
+		*target = val.Float()
+		return nil, nil
+	}
+	bc.class.DefineMethod(attr, rbMethod, mruby.ArgsReq(1))
+}
+
+// BindMapAttr binds a Ruby method named `attr` to the key, `key`, in the
+// provided map.
+func (
+	bc BindContext,
+) BindMapAttr(
+	attr string,
+	m map[string]interface{},
+	key string,
+) {
+	rbMethod := func(mrb *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+		val := mrb.GetArgs()[0]
+		m[key] = val.String()
+		return nil, nil
+	}
+	bc.class.DefineMethod(attr, rbMethod, mruby.ArgsReq(1))
+}
+
 //func (bc BindContext) BindStringFn(attr string, f func(string)) {
 //	rbMethod := func(mrb *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 //		val := mrb.GetArgs()[0]
@@ -59,12 +108,3 @@ func (bc BindContext) BindString(attr string, str *string) {
 //	}
 //	bc.class.DefineMethod(attr, rbMethod, mruby.ArgsReq(1))
 //}
-
-func (bc BindContext) BindMapAttr(attr string, m map[string]interface{}, key string) {
-	rbMethod := func(mrb *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-		val := mrb.GetArgs()[0]
-		m[key] = val.String()
-		return nil, nil
-	}
-	bc.class.DefineMethod(attr, rbMethod, mruby.ArgsReq(1))
-}
