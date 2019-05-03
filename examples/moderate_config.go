@@ -40,15 +40,15 @@ func main() {
 
 func dsl(bc rconf.BindContext) {
 	bc.BlockWithArg("database", func(bc rconf.BindContext) {
-		//backend := bc.Arg(0).String()
+		backend := bc.StringArg(0)
 
 		bc.BindString("host", &conf.Database.Host)
 		bc.BindInt("port", &conf.Database.Port)
 		bc.BindString("name", &conf.Database.Name)
 
-		//if backend == "postgres" {
-		//	bc.BindString("search_path", &conf.Database.SearchPath)
-		//}
+		if backend == "postgres" {
+			bc.BindString("search_path", &conf.Database.SearchPath)
+		}
 	})
 
 	bc.Block("server", func(bc rconf.BindContext) {

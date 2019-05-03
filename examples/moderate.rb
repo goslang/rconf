@@ -2,7 +2,7 @@ database :postgres do
   host '127.0.0.1'
   port 5432
   name :my_database
-  #schema_search :public
+  search_path :public
 end
 
 server do
