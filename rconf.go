@@ -105,14 +105,14 @@ func (
 	bc.class.DefineMethod(attr, rbMethod, mruby.ArgsReq(1))
 }
 
-//func (bc BindContext) BindStringFn(attr string, f func(string)) {
-//	rbMethod := func(mrb *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-//		val := mrb.GetArgs()[0]
-//		f(val.String())
-//		return nil, nil
-//	}
-//	bc.class.DefineMethod(attr, rbMethod, mruby.ArgsReq(1))
-//}
+func (bc BindContext) BindStringFn(attr string, f func(string)) {
+	rbMethod := func(mrb *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+		val := mrb.GetArgs()[0]
+		f(val.String())
+		return nil, nil
+	}
+	bc.class.DefineMethod(attr, rbMethod, mruby.ArgsReq(1))
+}
 
 func (bc BindContext) Arg(idx int) (*mruby.MrbValue, bool) {
 	args := mrb.GetArgs()
