@@ -11,7 +11,7 @@ import (
 
 var (
 	mrb      = mruby.NewMrb()
-	dslClass = mrb.DefineClass("RConfDSL", nil) // class is THE Ruby Class:Class
+	dslClass = mrb.DefineClass("RConfDSL", nil)
 )
 
 type Interpreter func(io.ReadCloser) error
@@ -41,14 +41,13 @@ func NewInterpreter(fn func(bc BindContext)) (Interpreter, error) {
 		defer parser.Close()
 
 		// Now we can use parser.GenerateCode to create a Ruby Block and
-		// execute it in the context of `klass`.
+		// execute it in the context of `dsl`.
 		proc := parser.GenerateCode()
 		_, err = mrb.Run(proc, dsl)
 		if err != nil {
 			return errors.Wrap(err, "Failed to executed Ruby")
 		}
 
-		println("Done")
 		return nil
 	}
 

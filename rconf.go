@@ -9,17 +9,22 @@ type BindContext struct {
 	class *mruby.Class
 }
 
-// block binds a config block to a Go function. The function will be called and passed
-// a new BindContext which builds a new, anonymous class that will in turn be used as the
-// context for the Ruby config block.
+// Block is a convenience method that calls BlockWith but expects no arguments
+// from Ruby.
 func (bc BindContext) Block(attr string, f func(BindContext)) {
 	bc.BlockWith(attr, mruby.ArgsNone(), f)
 }
 
+// BlockWithArg is a convenience method that calls BlockWith expecting exactly
+// one argument from Ruby.
 func (bc BindContext) BlockWithArg(attr string, f func(BindContext)) {
 	bc.BlockWith(attr, mruby.ArgsReq(1), f)
 }
 
+// BlockWith binds an attribute, `attr`, that takes `args` to a function that
+// accepts and runs a block. Before the block is executed, `f` will be called
+// and passed the BindContext that will be used, allowing it to configure any
+// DSL options that should be available.
 func (bc BindContext) BlockWith(attr string, args mruby.ArgSpec, f func(BindContext)) {
 	rbMethod := func(mrb *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 		dsl, _ := dslClass.New()
